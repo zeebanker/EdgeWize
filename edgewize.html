@@ -3913,10 +3913,11 @@ Sudden aggression = premium hand"></textarea>
             if (DRUM._bound) return;
             DRUM._bound = true;
 
-            function onDown(clientY) {
+            function onDown(clientY, isTouch) {
                 cancelAnimationFrame(DRUM.animFrame);
                 DRUM.isDragging = true;
                 DRUM.dragStarted = false;
+                DRUM._isTouch = !!isTouch;
                 DRUM.velocity = 0;
                 DRUM.lastY = clientY;
                 DRUM.lastTime = Date.now();
@@ -3937,8 +3938,8 @@ Sudden aggression = premium hand"></textarea>
                 // Track recent velocities for rolling average
                 const v = dy * (16 / dt);
                 DRUM._velocityHistory.push({ v: v, t: now });
-                // Keep only last 80ms of samples
-                DRUM._velocityHistory = DRUM._velocityHistory.filter(s => now - s.t < 80);
+                // Keep only last 100ms of samples
+                DRUM._velocityHistory = DRUM._velocityHistory.filter(s => now - s.t < 100);
 
                 DRUM.lastY = clientY;
                 DRUM.lastTime = now;
@@ -3950,11 +3951,13 @@ Sudden aggression = premium hand"></textarea>
                 DRUM.isDragging = false;
                 container.style.cursor = 'grab';
 
-                // Use rolling average velocity instead of last sample
+                // Use rolling average velocity
                 const history = DRUM._velocityHistory || [];
                 if (history.length > 0) {
-                    const avgV = history.reduce((sum, s) => sum + s.v, 0) / history.length;
-                    DRUM.velocity = Math.max(-20, Math.min(20, avgV));
+                    let avgV = history.reduce((sum, s) => sum + s.v, 0) / history.length;
+                    // Touch needs a boost — mobile touchmove reports smaller deltas
+                    if (DRUM._isTouch) avgV *= 1.8;
+                    DRUM.velocity = Math.max(-25, Math.min(25, avgV));
                 } else {
                     DRUM.velocity = 0;
                 }
@@ -3968,14 +3971,15 @@ Sudden aggression = premium hand"></textarea>
             }
 
             // Mouse
-            container.addEventListener('mousedown', (e) => { e.preventDefault(); onDown(e.clientY); });
+            container.addEventListener('mousedown', (e) => { e.preventDefault(); onDown(e.clientY, false); });
             window.addEventListener('mousemove', (e) => { if (DRUM.isDragging) { e.preventDefault(); onMove(e.clientY); }});
             window.addEventListener('mouseup', onUp);
 
-            // Touch
-            container.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(e.touches[0].clientY); }, { passive: false });
-            container.addEventListener('touchmove', (e) => { e.preventDefault(); onMove(e.touches[0].clientY); }, { passive: false });
-            container.addEventListener('touchend', onUp);
+            // Touch — bind move/end to window so swipes don't die if finger leaves container
+            container.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(e.touches[0].clientY, true); }, { passive: false });
+            window.addEventListener('touchmove', (e) => { if (DRUM.isDragging) { e.preventDefault(); onMove(e.touches[0].clientY); }}, { passive: false });
+            window.addEventListener('touchend', onUp);
+            window.addEventListener('touchcancel', onUp);
 
             // Mouse wheel — step one item at a time
             container.addEventListener('wheel', (e) => {
