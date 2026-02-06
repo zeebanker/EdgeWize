@@ -3999,40 +3999,6 @@ Sudden aggression = premium hand"></textarea>
                 snapToIndex(logicalIdx);
             }, { passive: false });
 
-            // Click / double-tap on item
-            let lastTapTime = 0;
-            let lastTapName = null;
-
-            container.addEventListener('click', (e) => {
-                if (DRUM.dragStarted) return;
-                if (DRUM._editing) return;
-                if (e.target.classList.contains('drum-inline-edit')) return;
-                if (e.target.classList.contains('drum-new-input')) return;
-
-                const item = e.target.closest('.apple-picker-item');
-                if (!item) return;
-                const logical = parseInt(item.dataset.logical);
-                const wrappedIdx = parseInt(item.dataset.index);
-                const playerName = item.dataset.name;
-                if (isNaN(logical)) return;
-
-                const now = Date.now();
-                const isDoubleTap = (now - lastTapTime < 400) && (lastTapName === playerName);
-
-                if (isDoubleTap && wrappedIdx === DRUM.selectedIndex) {
-                    lastTapTime = 0;
-                    lastTapName = null;
-                    // Start edit on whichever DOM element is currently selected
-                    const currentSelected = DRUM.cylinder.querySelector('.apple-picker-item.selected');
-                    if (currentSelected) {
-                        startDrumInlineEdit(currentSelected, wrappedIdx);
-                    }
-                } else {
-                    lastTapTime = now;
-                    lastTapName = playerName;
-                    snapToIndex(logical);
-                }
-            });
         }
 
         // === INLINE NAME EDITING ===
