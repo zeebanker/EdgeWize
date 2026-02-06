@@ -3741,7 +3741,7 @@ Sudden aggression = premium hand"></textarea>
             ITEM_H: 44,          // must match CSS .apple-picker-item height
             offset: 0,           // current scroll offset in px
             velocity: 0,
-            friction: 0.88,
+            friction: 0.92,
             isDragging: false,
             dragStarted: false,
             lastY: 0,
@@ -3944,7 +3944,7 @@ Sudden aggression = premium hand"></textarea>
                 DRUM.isDragging = false;
                 container.style.cursor = 'grab';
 
-                DRUM.velocity = Math.max(-18, Math.min(18, DRUM.velocity));
+                DRUM.velocity = Math.max(-20, Math.min(20, DRUM.velocity));
 
                 if (Math.abs(DRUM.velocity) < 1) {
                     DRUM.velocity = 0;
