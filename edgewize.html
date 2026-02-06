@@ -3920,6 +3920,7 @@ Sudden aggression = premium hand"></textarea>
                 DRUM.velocity = 0;
                 DRUM.lastY = clientY;
                 DRUM.lastTime = Date.now();
+                DRUM._velocityHistory = [];
                 container.style.cursor = 'grabbing';
             }
 
@@ -3932,7 +3933,12 @@ Sudden aggression = premium hand"></textarea>
                 if (Math.abs(dy) > 2) DRUM.dragStarted = true;
 
                 DRUM.offset += dy;
-                DRUM.velocity = dy * (16 / dt);
+
+                // Track recent velocities for rolling average
+                const v = dy * (16 / dt);
+                DRUM._velocityHistory.push({ v: v, t: now });
+                // Keep only last 80ms of samples
+                DRUM._velocityHistory = DRUM._velocityHistory.filter(s => now - s.t < 80);
 
                 DRUM.lastY = clientY;
                 DRUM.lastTime = now;
@@ -3944,7 +3950,14 @@ Sudden aggression = premium hand"></textarea>
                 DRUM.isDragging = false;
                 container.style.cursor = 'grab';
 
-                DRUM.velocity = Math.max(-20, Math.min(20, DRUM.velocity));
+                // Use rolling average velocity instead of last sample
+                const history = DRUM._velocityHistory || [];
+                if (history.length > 0) {
+                    const avgV = history.reduce((sum, s) => sum + s.v, 0) / history.length;
+                    DRUM.velocity = Math.max(-20, Math.min(20, avgV));
+                } else {
+                    DRUM.velocity = 0;
+                }
 
                 if (Math.abs(DRUM.velocity) < 1) {
                     DRUM.velocity = 0;
