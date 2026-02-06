@@ -3978,17 +3978,28 @@ Sudden aggression = premium hand"></textarea>
             window.addEventListener('mousemove', (e) => { if (DRUM.isDragging) { e.preventDefault(); onMove(e.clientY); }});
             window.addEventListener('mouseup', onUp);
 
-            // Touch — bind start to container AND inner elements, move/end to window
-            function touchStart(e) { e.preventDefault(); onDown(e.touches[0].clientY, true); }
-            container.addEventListener('touchstart', touchStart, { passive: false });
-            // Also capture touchstart on scroll area and cylinder for touches that start on items
-            const scrollArea = container.querySelector('.apple-picker-scroll');
-            const cylinder = container.querySelector('.drum-cylinder');
-            if (scrollArea) scrollArea.addEventListener('touchstart', touchStart, { passive: false });
-            if (cylinder) cylinder.addEventListener('touchstart', touchStart, { passive: false });
-            window.addEventListener('touchmove', (e) => { if (DRUM.isDragging) { e.preventDefault(); onMove(e.touches[0].clientY); }}, { passive: false });
-            window.addEventListener('touchend', onUp);
-            window.addEventListener('touchcancel', onUp);
+            // Touch — single capture-phase listener on container catches ALL touches inside
+            container.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDown(e.touches[0].clientY, true);
+            }, { passive: false, capture: true });
+
+            container.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onMove(e.touches[0].clientY);
+            }, { passive: false, capture: true });
+
+            container.addEventListener('touchend', (e) => {
+                e.stopPropagation();
+                onUp();
+            }, { capture: true });
+
+            container.addEventListener('touchcancel', (e) => {
+                e.stopPropagation();
+                onUp();
+            }, { capture: true });
 
             // Mouse wheel — step one item at a time
             container.addEventListener('wheel', (e) => {
